@@ -1,8 +1,8 @@
 var test = require('test');
 try {
     require('bogus');
-    test.print('FAIL require throws error when module missing', 'fail');
+    test.assert(0, 'require throws error when module missing');
 } catch (exception) {
-    test.print('PASS require throws error when module missing', 'pass');
+    test.assert(1, 'require throws error when module missing');
 }
 test.print('DONE', 'info');
