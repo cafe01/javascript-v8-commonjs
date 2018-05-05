@@ -1,29 +1,52 @@
-(function(resolveModule, requireNative){
+(function(global) {
+    "use strict";
 
-    var cache = {};
+    var modules = {},
+        callStack = [];
 
-    function require (moduleName) {
+    global.require = function(id) {
 
-        // build-in
-        var module = requireNative(moduleName);
-        if (module) return module;
+        // native module
+        var native = requireNative(id);
+        if (native) {
+            return native;
+        }
 
-        // js module
-        var moduleFile = resolveModule(moduleName);
-        if (!moduleFile) return;
+        // resolve file
+        var currentModule = callStack[callStack.length-1];
+        // console.log("currentModule", currentModule);
+        var file = resolveModule(id, currentModule ? currentModule.__filename : undefined);
+        if (!file) {
+            throw "Can't find module '" + id + "'"
+        }
 
-        // return from cache
-        if (cache[moduleFile])
-            return cache[moduleFile];
+        // already cached
+        if (modules[file]) {
+            return modules[file].exports;
+        }
+
+        // circular require
+        for (var i = 0; i < callStack.length; i++) {
+            if (callStack[i].__filename == file) {
+                return callStack[i].exports;
+            }
+        }
 
         // load module
-        var module = {
-            id: moduleFile,
-            exports: {}
-        };
+        var moduleSource = readFile(file),
+            module = {
+                exports: {},
+                __filename: file
+            };
 
-        cache[moduleFile] = module;
+        callStack.push(module);
+        (function(require, module, exports, __filename, __dirname) { eval(moduleSource) })(global.require, module, module.exports, file);
+        callStack.pop();
 
-    };
+        // cache and return
+        module.__filename = file;
+        modules[file] = module;
+        return modules[file].exports;
+    }
 
-})
+})(this)

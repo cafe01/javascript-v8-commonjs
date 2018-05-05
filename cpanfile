@@ -4,6 +4,7 @@ on 'test' => sub {
 };
 
 requires 'File::Basename';
+requires 'File::ShareDir';
 requires 'File::Spec::Functions';
 requires 'Cwd';
 requires 'Carp';

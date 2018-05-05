@@ -5,6 +5,7 @@ use strict;
 use warnings;
 use JavaScript::V8;
 use JavaScript::V8::CommonJS::Exception;
+use File::ShareDir 'dist_dir';
 use File::Basename 'dirname';
 use File::Spec::Functions qw' rel2abs catdir catfile ';
 use Cwd qw' getcwd ';
@@ -14,7 +15,9 @@ use Carp qw' croak confess ';
 
 our $VERSION = "0.01";
 
-my $scripts_dir = catdir(dirname(rel2abs(__FILE__)), 'scripts');
+my $scripts_dir = catdir(dirname(rel2abs(__FILE__)), '../../../share');
+$scripts_dir = catdir(dist_dir('JavaScript-V8-CommonJS'))
+    unless -d $scripts_dir;
 
 sub new {
     my $class = shift;
@@ -181,7 +184,7 @@ JavaScript::V8::CommonJS - Modules/1.0 for JavaScript::V8
 
 =head1 DESCRIPTION
 
-CommonJS implementation for JavaScript::V8. Currently only Module/1.0 spec is implemented. (Passing all unit tests at https://github.com/commonjs/commonjs/tree/master/tests/modules/1.0)
+CommonJS implementation for JavaScript::V8. Currently only Module/1.0 spec is implemented. (Passing all unit tests at L<https://github.com/commonjs/commonjs/tree/master/tests/modules/1.0>)
 
 =head1 CONSTRUCTOR
 
