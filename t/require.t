@@ -1,9 +1,10 @@
+
 use strict;
 use Test2::V0;
 use Test2::Tools::Exception qw/dies lives/;
 use JavaScript::V8::CommonJS;
 use FindBin;
-use Data::Dumper;
+# use Data::Dumper;
 
 my $js = JavaScript::V8::CommonJS->new(paths => ["$FindBin::Bin/modules"]);
 
@@ -16,12 +17,10 @@ subtest 'resolveModule - id' => sub {
     is $js->_resolveModule('invalid'), undef, 'invalid';
 };
 
+
 subtest 'resolveModule - relative' => sub {
     is $js->eval("typeof require('1.0/relative/submodule/a').foo"), 'function';
 };
-
-
-
 
 
 subtest 'readFile' => sub {
@@ -38,6 +37,7 @@ subtest 'require' => sub {
     ok dies { $js->eval("require('invalid')") }, 'invalid module exception';
     like dies { $js->eval("require('notStrict')") }, qr/ReferenceError/, 'use strict';
 };
+
 
 subtest 'add_module' => sub {
     local $js->{modules} = {};

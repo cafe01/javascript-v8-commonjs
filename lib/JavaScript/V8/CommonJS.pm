@@ -1,29 +1,45 @@
 package JavaScript::V8::CommonJS;
 
-use Mojo::Base -base;
-use strictures 2;
-use Mojo::File 'path';
+# use strictures 2;
+use strict;
+use warnings;
 use JavaScript::V8;
 use JavaScript::V8::CommonJS::Exception;
-use Cwd;
-use Data::Dumper;
-use Data::Printer;
-use Carp qw/croak/;
+use File::Basename 'dirname';
+use File::Spec::Functions qw' rel2abs catdir catfile ';
+use Cwd qw' getcwd ';
+# use Data::Dumper;
+# use Data::Printer;
+use Carp qw' croak confess ';
 
 our $VERSION = "0.01";
 
-my $scripts_dir = path(__FILE__)->sibling('scripts');
+my $scripts_dir = catdir(dirname(rel2abs(__FILE__)), 'scripts');
 
+sub new {
+    my $class = shift;
+    my $args = @_ == 0 ? {}
+        : @_ > 1 ? {@_} : $_[0];
 
-has 'paths' => sub { [getcwd()] };
-has 'c' => \&_build_ctx;
-has 'modules' => sub { {} };
+    croak "invalid arguments" unless ref $args eq 'HASH';
+
+    bless my $self = {
+        paths   => $args->{paths}   || [getcwd()],
+        modules => $args->{modules} || {},
+    }, $class;
+
+    $self->{c} = $self->_build_ctx;
+    $self;
+}
+
+sub c { shift->{c} }
+sub modules { shift->{modules} }
+sub paths { shift->{paths} }
 
 
 sub _build_ctx {
     my $self = shift;
     my $c = JavaScript::V8::Context->new;
-
 
     # global functions
     for my $name (qw/ readFile resolveModule requireNative /) {
@@ -35,13 +51,16 @@ sub _build_ctx {
 
     $c->bind(
         console => {
-            log => \&_log
+            log => \&_log,
+            warn => \&_log,
+            error => \&_log,
+            info => \&_log,
         }
     );
 
     # require.js
-    my $require_js = $scripts_dir->child("require.js");
-    _eval($c, $require_js->slurp, $require_js->to_string);
+    my $require_js = catfile($scripts_dir, "require.js");
+    _eval($c, _slurp($require_js), $require_js);
 
     $c;
 }
@@ -49,7 +68,7 @@ sub _build_ctx {
 sub add_module {
     my ($self, $name, $module) = @_;
     my $mods = $self->modules;
-    die "add_module() error: '$name' already exists'" if exists $mods->{$name};
+    croak "add_module() error: '$name' already exists'" if exists $mods->{$name};
     $mods->{$name} = $module;
 }
 
@@ -62,15 +81,15 @@ sub _requireNative {
 sub _resolveModule {
     my ($self, $id, $current_module_file) = @_;
 
-    die "Can't traverse up the module paths." if $id =~ /\.\./;
+    confess "Can't traverse up the module paths." if $id =~ /\.\./;
 
     # relative
     if ($id =~ /^\.\//) {
 
-        die "Can't load relative module '$id' without current_module_file" unless $current_module_file;
-        my $dir = path($current_module_file)->dirname;
-        my $file = $dir->child($id.'.js');
-        return -e $file ? $file->to_string : undef;
+        confess "Can't load relative module '$id' without current_module_file" unless $current_module_file;
+        my $dir = dirname($current_module_file);
+        my $file = catfile($dir, $id.'.js');
+        return -e $file ? $file : undef;
     }
 
 
@@ -79,7 +98,7 @@ sub _resolveModule {
 
     # module id
     foreach my $path (@{$self->paths}) {
-        my $file = path($path)->child($id.".js");
+        my $file = catfile($path, $id.".js");
         return "$file" if -f $file;
     }
 
@@ -89,9 +108,8 @@ sub _resolveModule {
 
 sub _readFile {
     my ($self, $path) = @_;
-    my $file = path($path);
-    return undef unless -e $file;
-    $file->slurp;
+    return undef unless -f $path;
+    _slurp($path);
 }
 
 
@@ -104,7 +122,7 @@ sub _log {
 sub eval_file {
     my ($self, $file) = @_;
     croak "do not exist: $file" unless -f $file;
-    $self->eval(path($file)->slurp, $file);
+    $self->eval(_slurp($file), $file);
 }
 
 
@@ -130,82 +148,16 @@ sub _eval {
 
 
 
+sub _slurp {
+  my $path = shift;
 
-# use File::Basename qw(dirname);
-# use IO::File;
-#
-# my %MODS = ();
-# sub _absolute {
-#     my $path = shift;
-#     if($path =~ m|^\./(.*)|) {
-#         $path = dirname($JSPL::This->{module}{id}) . "/$1";
-#     }
-#     $path;
-# }
-#
-# my @Paths = ();
-#
-# sub _require {
-#     my $path = shift;
-#     $path = _absolute($path);
-#     my $incs = $MODS{$JSPL::Context::CURRENT};
-#     return $incs->{$path} if($incs->{$path});
-#     for(@Paths) {
-#         my $file = "$_/$path.js";
-#         if(-r $file) {
-#             my $ctx = JSPL::Context->current;
-#             my $gbl = $ctx->get_global;
-#             my $scope = $ctx->new_object;
-#             $scope->{'exports'} = $ctx->new_object($scope);
-#             $incs->{$path} = $scope->{'exports'};
-#             $scope->{'module'} = $ctx->new_object($scope);
-#             $scope->{'module'}{'id'} = $path;
-#             $scope->{'require'} = $gbl->{'require'};
-#             $ctx->jsc_eval($scope, undef, $file);
-#             return $incs->{$path};
-#         }
-#     }
-#     die "Can't open $path\n";
-# }
-#
-# our @System = (
-#     env => \%ENV,
-#     args => \@main::ARGS,
-#     platform => 'JSPL commonJS',
-#     stdout => IO::Handle->new_from_fd(fileno(STDOUT), 'w'),
-#     stdin => IO::Handle->new_from_fd(fileno(STDIN), 'r'),
-#     stderr => IO::Handle->new_from_fd(fileno(STDERR), 'w'),
-# );
-#
-# $JSPL::Runtime::Plugins{commonJS} = {
-#     ctxcreate => sub {
-#         my $ctx = shift;
-#         $MODS{$ctx->id} = {
-#             program => $ctx->eval(q|var require, exports = {}; exports;|)
-#         };
-#         $ctx->bind_all(
-#             'require' => \&_require,
-#             'require.paths' => \@Paths,
-#             'require.main' => undef
-#         );
-#     },
-#     main => sub {
-#         my $ctx = shift;
-#         my $prgname = shift;
-#         push @Paths, dirname($prgname);
-#         my $sys = $ctx->new_object;
-#         while(my($k, $v) = splice(@System, 0,  2)) {
-#             $sys->STORE($k, $v);
-#         }
-#         $sys->STORE('global', $ctx->get_global);
-#         $sys->STORE('command', $prgname);
-#         my $ctl = $ctx->get_controller;
-#         $ctl->_chktweaks('IO::Handle', $ctl->add('IO::Handle'));
-#         $MODS{$ctx->id}{'system'} = $sys;
-#     },
-# };
+  CORE::open my $file, '<:encoding(UTF-8)', $path or croak qq{Can't open file "$path": $!};
+  my $ret = my $content = '';
+  while ($ret = $file->sysread(my $buffer, 131072, 0)) { $content .= $buffer }
+  croak qq{Can't read from file "$path": $!} unless defined $ret;
 
-
+  return $content;
+}
 
 1;
 __END__
@@ -214,15 +166,72 @@ __END__
 
 =head1 NAME
 
-CommonJS - It's new $module
+JavaScript::V8::CommonJS - Modules/1.0 for JavaScript::V8
 
 =head1 SYNOPSIS
 
-    use CommonJS;
+    use JavaScript::V8::CommonJS;
+
+    my $js = JavaScript::V8::CommonJS->new(paths => ["./modules"]);
+
+    print $js->eval('require("foo").add(4, 2)');  # prints 6
+
+    # modules/foo.js
+    # exports.add = function(a, b) { return a + b }
 
 =head1 DESCRIPTION
 
-CommonJS is ...
+CommonJS implementation for JavaScript::V8. Currently only Module/1.0 spec is implemented. (Passing all unit tests at https://github.com/commonjs/commonjs/tree/master/tests/modules/1.0)
+
+=head1 CONSTRUCTOR
+
+=head2 new
+
+All arguments are optional.
+
+=over
+
+=item paths
+
+Arrayref of paths to search for modules. Default: [getcwd()].
+
+=item modules
+
+Hashref of native modules. Default: {}.
+
+=end
+
+=head1 METHODS
+
+=head2 add_module(name => module)
+
+Register native modules. Attempting to register a module twice is a fatal error.
+
+    $js->add_module( http => {
+        get => sub { ... },
+        post => sub { ... },
+        ...
+    });
+
+=head2 eval(js_code, source)
+
+Evaluates javascript source code on the global context. JS exceptions are rethrown as L<JavaScript::V8::CommonJS::Exception> instances.
+
+    $js->eval('require("program").doSomething()', "main")
+
+The second argument is a source or filename to be reported on error messages.
+
+
+=head2 eval_file(path)
+
+    $js->eval_file("main.js")
+
+=head2 c
+
+Returns the JavaScript::V8::Context instance.
+
+    # run v8 garbage collector
+    $js->c->idle_notification
 
 =head1 LICENSE
 

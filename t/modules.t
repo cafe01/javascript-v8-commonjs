@@ -3,7 +3,6 @@ use Test2::V0;
 use Test2::Tools::Exception qw/dies lives/;
 use JavaScript::V8::CommonJS;
 use FindBin;
-use Data::Dumper;
 
 my $js = JavaScript::V8::CommonJS->new(paths => ["$FindBin::Bin/modules"]);
 
@@ -31,7 +30,6 @@ sub js_test {
     my $name = shift;
     local $js->{paths} = ["$FindBin::Bin/modules/1.0/$name"];
     subtest "$name" => sub {
-        # $js->eval_file($file);
         $js->eval("require('program')");
     };
 }

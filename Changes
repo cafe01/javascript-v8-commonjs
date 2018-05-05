@@ -2,5 +2,5 @@ Revision history for Perl extension JavaScript-V8-CommonJS
 
 {{$NEXT}}
 
-    - original version
-
+    - first public version
+      * all Modules/1.0 unit test passing
