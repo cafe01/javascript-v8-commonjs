@@ -72,15 +72,3 @@ it under the same terms as Perl itself.
 # AUTHOR
 
 Carlos Fernando Avila Gratz <cafe@kreato.com.br>
-
-# POD ERRORS
-
-Hey! **The above document had some coding errors, which are explained below:**
-
-- Around line 205:
-
-    '=end' without a target?
-
-- Around line 207:
-
-    You forgot a '=back' before '=head1'

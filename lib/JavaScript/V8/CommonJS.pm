@@ -202,7 +202,7 @@ Arrayref of paths to search for modules. Default: [getcwd()].
 
 Hashref of native modules. Default: {}.
 
-=end
+=back
 
 =head1 METHODS
 
