@@ -16,6 +16,7 @@ my $scripts_dir = path(__FILE__)->sibling('scripts');
 
 has 'paths' => sub { [getcwd()] };
 has 'c' => \&_build_ctx;
+has 'modules' => sub { {} };
 
 
 sub _build_ctx {
@@ -24,14 +25,13 @@ sub _build_ctx {
 
 
     # global functions
-    for my $name (qw/ readFile resolveModule /) {
+    for my $name (qw/ readFile resolveModule requireNative /) {
 
         $c->bind($name => sub {
             $self->can("_$name")->($self, @_);
         });
     }
 
-    $c->bind(resolveModule => sub { $self->_resolveModule(@_) });
     $c->bind(
         console => {
             log => \&_log
@@ -43,6 +43,19 @@ sub _build_ctx {
     _eval($c, $require_js->slurp, $require_js->to_string);
 
     $c;
+}
+
+sub add_module {
+    my ($self, $name, $module) = @_;
+    my $mods = $self->modules;
+    die "add_module() error: '$name' already exists'" if exists $mods->{$name};
+    $mods->{$name} = $module;
+}
+
+
+sub _requireNative {
+    my ($self, $id) = @_;
+    $self->modules->{$id};
 }
 
 sub _resolveModule {

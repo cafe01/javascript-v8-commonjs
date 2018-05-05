@@ -32,6 +32,33 @@ subtest 'require' => sub {
     like dies { $js->eval("require('notStrict')") }, qr/ReferenceError/, 'use strict';
 };
 
+subtest 'add_module' => sub {
+    local $js->{modules} = {};
+    my $module = { bar => 'baz' };
+    $js->add_module(foo => $module);
+    is $js->modules->{foo}, $module;
+    like dies { $js->add_module(foo => {}) }, qr/already exists/, "error: already exists";
+};
+
+
+subtest 'requireNative' => sub {
+    local $js->{modules} = {};
+    $js->add_module(foo => { bar => 'baz' });
+    is $js->eval("requireNative('foo').bar"), 'baz';
+
+    $js->add_module(simpleMath => { native => 'ok' });
+    is $js->eval("require('simpleMath').native"), 'ok';
+
+};
+
+
+
+sub js_test {
+    my $name = shift;
+    my $file = "$FindBin::Bin/modules/1.0/$name/program.js";
+    die "missing js test '$file'" unless -f $file;
+}
+
 
 
 done_testing;
