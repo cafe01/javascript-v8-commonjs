@@ -8,6 +8,7 @@ use JavaScript::V8::CommonJS::Exception;
 use Cwd;
 use Data::Dumper;
 use Data::Printer;
+use Carp qw/croak/;
 
 our $VERSION = "0.01";
 
@@ -59,9 +60,24 @@ sub _requireNative {
 }
 
 sub _resolveModule {
-    my ($self, $id) = @_;
+    my ($self, $id, $current_module_file) = @_;
+
+    die "Can't traverse up the module paths." if $id =~ /\.\./;
 
     # relative
+    if ($id =~ /^\.\//) {
+
+        die "Can't load relative module '$id' without current_module_file" unless $current_module_file;
+        my $dir = path($current_module_file)->dirname;
+        my $file = $dir->child($id.'.js');
+        return -e $file ? $file->to_string : undef;
+    }
+
+
+    # convert absolute path into module id
+    $id =~ s/^\/+//g;
+
+    # module id
     foreach my $path (@{$self->paths}) {
         my $file = path($path)->child($id.".js");
         return "$file" if -f $file;
@@ -81,9 +97,16 @@ sub _readFile {
 
 sub _log {
     my (@lines) = @_;
-    @lines = map { ref ? Dumper($_) : $_ } @lines;
+    @lines = map { defined ? $_ : 'undef' } map { ref ? Dumper($_) : $_ } @lines;
     printf STDERR "# [console.log] @lines\n";
 }
+
+sub eval_file {
+    my ($self, $file) = @_;
+    croak "do not exist: $file" unless -f $file;
+    $self->eval(path($file)->slurp, $file);
+}
+
 
 sub eval {
     my $self = shift;
