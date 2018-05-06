@@ -1,11 +1,28 @@
 package JavaScript::V8::CommonJS::Exception;
 
-use Mojo::Base -base;
+use strict;
+use warnings;
 use overload '""' => 'to_string';
 
-has 'message' => '';
-has 'source'  => '?';
-has 'line'    => '?';
+
+
+sub new {
+    my $class = shift;
+    my $args = shift || {};
+    $class = ref $class if ref $class;
+    my $self = bless {
+        message => $args->{message} || '',
+        source  => $args->{source}  || '?',
+        line    => $args->{line}  || '?',
+    }, $class;
+
+    $self;
+}
+
+
+sub message { shift->{message} }
+sub source { shift->{source} }
+sub line { shift->{line} }
 
 
 sub to_string {
