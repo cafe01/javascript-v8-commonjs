@@ -8,14 +8,14 @@ use JavaScript::V8::CommonJS::Exception;
 use File::ShareDir 'dist_dir';
 use File::Basename 'dirname';
 use File::Spec::Functions qw' rel2abs catdir catfile ';
-use Cwd qw' getcwd ';
-# use Data::Dumper;
+use Cwd qw' getcwd realpath ';
+use Data::Dumper;
 # use Data::Printer;
 use Carp qw' croak confess ';
 
 our $VERSION = "0.01";
 
-my $scripts_dir = catdir(dirname(rel2abs(__FILE__)), '../../../share');
+my $scripts_dir = realpath catdir(dirname(rel2abs(__FILE__)), '../../../share');
 $scripts_dir = catdir(dist_dir('JavaScript-V8-CommonJS'))
     unless -d $scripts_dir;
 
@@ -137,14 +137,9 @@ sub eval {
 sub _eval {
     my ($c, $code, $source) = @_;
     local $@ = undef;
-    my $rv = $c->eval($code, $source || ());
+    my $rv = $c->eval("try {$code} catch(e) { throw e.stack }", $source || ());
     if (!defined $rv && $@) {
-        my ($msg, $source, $line) = $@ =~ /(.*) at (.*):(\d+)$/;
-        die JavaScript::V8::CommonJS::Exception->new({
-            message => $msg,
-            source => $source,
-            line => $line
-        })
+        die JavaScript::V8::CommonJS::Exception->new_from_string($@)
     }
     $rv;
 };

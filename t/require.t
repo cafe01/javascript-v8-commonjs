@@ -36,6 +36,7 @@ subtest 'require' => sub {
     is $js->eval("require('simpleMath').foo"), 'bar', 'cached';
     ok dies { $js->eval("require('invalid')") }, 'invalid module exception';
     like dies { $js->eval("require('notStrict')") }, qr/ReferenceError/, 'use strict';
+    like dies { $js->eval("require('notStrict')") }, qr/ReferenceError/, 'dont cache bad modules';
 };
 
 

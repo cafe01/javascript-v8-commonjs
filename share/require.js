@@ -39,9 +39,17 @@
                 __filename: file
             };
 
-        callStack.push(module);
-        (function(require, module, exports, __filename, __dirname) { eval(moduleSource) })(global.require, module, module.exports, file);
-        callStack.pop();
+        // catch compilation error
+        try {
+            callStack.push(module);
+            (function (require, module, exports, __filename, __dirname) { eval(moduleSource) })(global.require, module, module.exports, file);
+            callStack.pop();
+        }
+        catch (e) {
+            e.stack = e.stack.replace(/<anonymous>:(\d+:\d+\))/, file + ':' + "$1");
+            callStack.pop();
+            throw e;
+        }
 
         // cache and return
         module.__filename = file;
