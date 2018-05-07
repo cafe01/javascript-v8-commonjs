@@ -33,8 +33,7 @@
         }
 
         // load module
-        var moduleSource = readFile(file),
-            module = {
+        var module = {
                 exports: {},
                 __filename: file
             };
@@ -42,7 +41,7 @@
         // catch compilation error
         try {
             callStack.push(module);
-            (function (require, module, exports, __filename, __dirname) { eval(moduleSource) })(global.require, module, module.exports, file);
+            (function (require, module, exports, __filename, __dirname) { eval(readFile(file)) })(global.require, module, module.exports, file);
             callStack.pop();
         }
         catch (e) {
