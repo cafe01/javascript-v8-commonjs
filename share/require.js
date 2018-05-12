@@ -14,7 +14,6 @@
 
         // resolve file
         var currentModule = callStack[callStack.length-1];
-        // console.log("currentModule", currentModule);
         var file = resolveModule(id, currentModule ? currentModule.__filename : undefined);
         if (!file) {
             throw "Can't find module '" + id + "'"
@@ -33,27 +32,14 @@
         }
 
         // load module
-        var module = {
-                exports: {},
-                __filename: file
-            };
+        evalModuleFile(file)
 
-        // catch compilation error
-        try {
-            callStack.push(module);
-            (function (require, module, exports, __filename, __dirname) { eval(readFile(file)) })(global.require, module, module.exports, file);
-            callStack.pop();
+        if (modules[file]) {
+            return modules[file].exports;
         }
-        catch (e) {
-            e.stack = e.stack.replace(/<anonymous>:(\d+:\d+\))/, file + ':' + "$1");
-            callStack.pop();
-            throw e;
-        }
-
-        // cache and return
-        module.__filename = file;
-        modules[file] = module;
-        return modules[file].exports;
     }
+
+    global.require.__modules = modules;
+    global.require.__callStack = callStack;
 
 })(this)

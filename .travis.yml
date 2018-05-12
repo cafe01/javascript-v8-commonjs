@@ -1,12 +1,6 @@
 language: perl
 sudo: false
 perl:
-  - "5.12"
-  - "5.14"
-  - "5.16"
-  - "5.18"
-  - "5.20"
-  - "5.22"
   - "5.24"
   - "5.26"
   - "dev"
@@ -17,4 +11,5 @@ matrix:
   allow_failures:
     - perl: dev
 before_install:
+  - curl -sL --compressed https://git.io/cpm | perl - install Alien::V8
   - eval $(curl https://travis-perl.github.io/init) --auto
