@@ -2,6 +2,10 @@ Revision history for Perl extension JavaScript-V8-CommonJS
 
 {{$NEXT}}
 
+0.03 2018-05-12T20:38:22Z
+
+    - improved require() implementation to get correct stacktrace
+
 0.02 2018-05-07T00:15:42Z
 
     - implemented partial stacktrace handling
