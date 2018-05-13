@@ -118,7 +118,7 @@ sub _readFile {
 
 sub _log {
     my (@lines) = @_;
-    @lines = map { defined ? $_ : 'undef' } map { ref ? Dumper($_) : $_ } @lines;
+    @lines = map { defined $_ ? $_ : 'undef' } map { ref $_ ? Dumper($_) : $_ } @lines;
     printf STDERR "# [console.log] @lines\n";
 }
 
