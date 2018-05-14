@@ -2,6 +2,8 @@ Revision history for Perl extension JavaScript-V8-CommonJS
 
 {{$NEXT}}
 
+    - fixed eval() first stack item line manipulation
+
 0.03 2018-05-12T20:38:22Z
 
     - improved require() implementation to get correct stacktrace

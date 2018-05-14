@@ -183,7 +183,8 @@ sub _eval {
     if (!defined $rv && $@) {
         # warn "# eval error((($@)))";
         my $exception =  JavaScript::V8::CommonJS::Exception->new_from_string($@);
-        $exception->stack->[-1]->{column} -= 5 if $exception->stack->[-1]->{column};
+        my $ourStackCall = $exception->stack->[-1];
+        $ourStackCall->{column} = $ourStackCall->{column} - 5 if ref $ourStackCall eq 'HASH'; # subtract "try {" length
         die $exception;
     }
     $rv;
