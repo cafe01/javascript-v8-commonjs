@@ -29,3 +29,5 @@ cover_db/
 MYMETA.*
 
 /JavaScript-V8-CommonJS-*
+
+t/sandbox.pl

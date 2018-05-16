@@ -10,7 +10,7 @@ use File::Basename 'dirname';
 use File::Spec::Functions qw' rel2abs catdir catfile ';
 use Cwd qw' getcwd realpath ';
 use Data::Dumper;
-# use Data::Printer;
+use Data::Printer;
 use Carp qw' croak confess ';
 
 our $VERSION = "0.04";
@@ -29,6 +29,7 @@ sub new {
     bless my $self = {
         paths   => $args->{paths}   || [getcwd()],
         modules => $args->{modules} || {},
+        v8_params => $args->{v8_params},
     }, $class;
 
     $self->{c} = $self->_build_ctx;
@@ -42,7 +43,7 @@ sub paths { shift->{paths} }
 
 sub _build_ctx {
     my $self = shift;
-    my $c = JavaScript::V8::Context->new;
+    my $c = JavaScript::V8::Context->new($self->{v8_params} ? %{$self->{v8_params}} : ());
 
     # global functions
     for my $name (qw/ resolveModule requireNative evalModuleFile /) {
@@ -242,6 +243,10 @@ Arrayref of paths to search for modules. Default: [getcwd()].
 =item modules
 
 Hashref of native modules. Default: {}.
+
+=item v8_params
+
+Hashref passed directly to L<JavaScript::V8::Context/new>. Default: undef.
 
 =back
 
