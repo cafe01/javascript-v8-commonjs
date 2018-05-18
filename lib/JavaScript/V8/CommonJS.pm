@@ -102,8 +102,9 @@ sub _resolveModule {
 
     # module id
     foreach my $path (@{$self->paths}) {
-        my $file = catfile($path, $id.".js");
-        return "$file" if -f $file;
+        for my $file (catfile($path, $id.".js"), catfile($path, $id.".json")) {
+            return $file if -f $file;
+        }
     }
 
     return undef;
@@ -134,6 +135,33 @@ sub _evalModuleFile {
     croak "module '$file' do not exist" unless -f $file;
     my $module_code = _slurp($file);
 
+    # JSON
+    if ($file =~ /\.json$/) {
+        
+        # validate json
+        my $json = _slurp($file);
+
+        # inject as module
+        my $rv = $self->c->eval(qq!
+
+            require.__modules["$file"] = {
+                exports: null,
+                __filename: "$file"
+            };
+
+            (function (module) { "use strict"; module.exports = $json; })(require.__modules["$file"]);
+
+        !, $file);
+
+        if (!defined $rv && $@) {
+            $@ =~ s/^Error: //;
+            die $@
+        }
+
+        return;
+    }
+
+    # js module
     my $wrapper = qq!
 
         require.__modules["$file"] = {
