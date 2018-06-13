@@ -13,7 +13,7 @@ use Data::Dumper;
 use Data::Printer;
 use Carp qw' croak confess ';
 
-our $VERSION = "0.07";
+our $VERSION = "0.08";
 
 my $scripts_dir = realpath catdir(dirname(rel2abs(__FILE__)), '../../../share');
 $scripts_dir = catdir(dist_dir('JavaScript-V8-CommonJS'))
