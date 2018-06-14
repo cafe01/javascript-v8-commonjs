@@ -10,10 +10,10 @@ use File::Basename 'dirname';
 use File::Spec::Functions qw' rel2abs catdir catfile ';
 use Cwd qw' getcwd realpath ';
 use Data::Dumper;
-use Data::Printer;
+# use Data::Printer;
 use Carp qw' croak confess ';
 
-our $VERSION = "0.08";
+our $VERSION = "0.09";
 
 my $scripts_dir = realpath catdir(dirname(rel2abs(__FILE__)), '../../../share');
 $scripts_dir = catdir(dist_dir('JavaScript-V8-CommonJS'))
